@@ -32,7 +32,7 @@ wifi:
   # Enable fallback hotspot (captive portal) in case wifi connection fails
   ap:
     ssid: "Garage-Door-Controller"
-    password: "eXbhM8qXvoM3"
+    password: !secret garage_door_ap_password
 
 captive_portal:
 
