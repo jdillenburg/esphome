@@ -1,0 +1,280 @@
+esphome:
+  name: garage-door-controller
+  friendly_name: Garage door controller
+  includes:
+    - TFmini.h
+
+substitutions:
+  led_count: "60"
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+# Enable logging
+logger:
+  level: INFO
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret garage_door_api_key
+
+ota:
+  - platform: esphome
+    password: !secret garage_door_ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Garage-Door-Controller"
+    password: "eXbhM8qXvoM3"
+
+captive_portal:
+
+globals:
+  - id: sensor_counter
+    type: int
+    initial_value: '0'
+  - id: effect_counter 
+    type: int
+    initial_value: '0'
+
+# Garage door button on GPIO16
+switch:
+  - platform: gpio
+    device_class: switch
+    pin: GPIO17
+    id: relay
+    name: "Garage Door Relay"
+    restore_mode: ALWAYS_OFF
+    on_turn_on:
+      then:
+        - delay: 100ms
+        - switch.turn_off: relay
+
+# configurable distance thresholds
+number:
+  - platform: template
+    name: Minimum distance
+    id: min_distance
+    icon: "mdi:cogs"
+    optimistic: true
+    restore_value: true 
+    initial_value: "0.0"
+    min_value: 0.0
+    max_value: 20000.0
+    step: 1.0
+    unit_of_measurement: cm
+  - platform: template
+    name: Maximum distance
+    id: max_distance
+    icon: "mdi:cogs"
+    optimistic: true
+    restore_value: true 
+    initial_value: "10000.0"
+    min_value: 0.0
+    max_value: 20000.0
+    step: 1.0
+    unit_of_measurement: cm
+  - platform: template
+    name: Buffer distance
+    id: buffer_distance
+    icon: "mdi:cogs"
+    optimistic: true
+    restore_value: true 
+    initial_value: "10.0"
+    min_value: 0.0
+    max_value: 20000.0
+    step: 1.0
+    unit_of_measurement: cm
+
+#**************** UART ********************
+uart:
+  tx_pin: GPIO21 #TXD
+  rx_pin: GPIO22 #RXD
+  baud_rate: 115200
+  id: uart_bus
+  debug:
+    direction: BOTH
+    dummy_receiver: false
+    after:
+      delimiter: "\n"
+    sequence:
+     - lambda: UARTDebug::log_string(direction, bytes);
+
+#******************** Binary Sensor *********************
+binary_sensor:
+  - platform: gpio
+    pin: GPIO23
+    id: closed_sensor
+    internal: True
+
+#******************** Sensor *********************
+sensor:
+  - platform: custom
+    lambda: |-
+      auto distance_sensor = new TFminiSensor(id(uart_bus));
+      App.register_component(distance_sensor);
+      return {distance_sensor};
+    sensors:
+      id: distance_sensor_raw
+      internal: True
+      name: "Distance sensor raw"
+      unit_of_measurement: "cm"
+      on_value: 
+        then:
+          - sensor.template.publish:
+              id: distance_sensor
+              state: !lambda 'return x;'
+          - sensor.template.publish:
+              id: distance_sensor_leds
+              state: !lambda 'return x;'
+          - lambda: |-
+              id(sensor_counter) = id(sensor_counter) + 1;
+          # - sensor.template.publish:
+          #     id: reading_sensor_counter
+          #     state: !lambda 'return id(reading_counter).state + 1;'
+  - platform: template
+    name: "Distance sensor"
+    id: distance_sensor
+    internal: False
+    unit_of_measurement: "cm"
+    filters:
+      - clamp:
+          min_value: 0.0
+          max_value: 800.0
+          ignore_out_of_range: True
+      - throttle_average: 1000ms
+  - platform: template
+    name: "Distance sensor for LEDs"
+    id: distance_sensor_leds
+    internal: True
+    unit_of_measurement: "cm"
+    filters:
+      - clamp:
+          min_value: 0.0
+          max_value: 800.0
+          ignore_out_of_range: True  
+  - platform: template
+    name: "Sensor readings per second"
+    id: reading_counter
+    unit_of_measurement: "readings/s"
+    icon: "mdi:speedometer"
+    update_interval: 10s
+    lambda: |-
+      float current_count = id(sensor_counter);
+      id(sensor_counter) = 0;
+      return current_count/10.0;
+  - platform: template
+    id: light_speed
+    name: "Light effect changes per second"
+    unit_of_measurement: "Hz"
+    icon: "mdi:speedometer"
+    update_interval: 10s 
+    lambda: |-
+      float current_count = id(effect_counter);
+      id(effect_counter) = 0;
+      return current_count/10.0;
+
+#******************** Cover *********************
+cover:
+  - platform: template
+    name: "Garage Door"
+    id: garage_door
+    device_class: garage
+    open_action: 
+      then:
+        - switch.toggle: relay
+    close_action: 
+      then:
+        - switch.toggle: relay
+    lambda: |-
+      return id(closed_sensor).state ? COVER_OPEN : COVER_CLOSED;
+
+# LED Strip configuration
+light:
+  - platform: esp32_rmt_led_strip
+    rmt_channel: 1
+    id: led_strip
+    chipset: WS2812
+    pin: GPIO16
+    num_leds: ${led_count}
+    rgb_order: GRB
+    name: "Parking Assistant LEDs"
+    restore_mode: RESTORE_DEFAULT_ON
+    effects:
+      - addressable_lambda:
+          name: "Distance Effect"
+          update_interval: 250ms
+          lambda: |-
+            float distance = id(distance_sensor_leds).state;
+            if (distance <= 0 || std::isnan(distance)) return;  // Invalid reading
+
+            // Get the total number of LEDs
+            const int total_leds = it.size();
+
+            // Calculate safe zone boundaries
+            float min_safe = id(min_distance).state - id(buffer_distance).state;
+            float max_safe = id(min_distance).state + id(buffer_distance).state;
+
+            // Measure update rate
+            id(effect_counter) = id(effect_counter) + 1;
+
+            // blink if less than min_safe
+            if (distance < min_safe) {
+              if ((millis() % 1000) < 500) {
+                it.all() = Color(255,0,0);  // RED
+              }
+              else {
+                it.all() = Color::BLACK;
+              }
+              return;
+            }
+
+            // solid red in safe zone
+            if (distance < max_safe) {
+              it.all() = Color(255,0,0);
+              return;
+            }
+
+            // Above max_safe distance, calculate color and LED count
+            float ratio;
+            float denominator = id(max_distance).state - max_safe;
+            if (denominator <= 0.0) {
+              ratio = 1.0;
+            } else {
+              ratio = (distance - max_safe) / denominator;
+              ratio = std::max(0.0f, std::min(1.0f, ratio));
+            }
+
+            // Calculate colors - linear interpolation from red to yellow to green
+            uint8_t red, green;
+            if (ratio <= 0.5) {  // Red to Yellow
+              red = 255;
+              green = 255 * ratio * 2;  // Green goes from 0 to 1
+            } else {  // Yellow to Green
+              red = 255 * 2 * (1.0 - ratio);  // Red goes from 1 to 0
+              green = 255;
+            }
+
+            // Create the color object
+            auto color = Color(red, green, 0);
+
+            // Calculate the number of LEDs to light
+            int leds_to_light = static_cast<int>(ratio * total_leds + 0.5);
+            leds_to_light = std::max(0, std::min(total_leds, leds_to_light));
+
+            // Center the lit LEDs
+            int start_index = (total_leds - leds_to_light) / 2;
+            int end_index = start_index + leds_to_light - 1;
+
+            // Turn off all LEDs
+            it.range(0, start_index) = Color::BLACK;
+            it.range(start_index, end_index) = color;
+            it.range(end_index, total_leds) = Color::BLACK;
+            return;
