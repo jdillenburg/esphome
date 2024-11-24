@@ -1,0 +1,31 @@
+esphome:
+  name: basement-stairs-mini
+  friendly_name: basement stairs mini
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "He3sclXVKUDGA2Cv7Q0OxiOwpaAQ0CDRL8IkvfT8Zsc="
+
+ota:
+  password: "8ded3b7c8f13033cbf018b5672b74b21"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Basement-Stairs-Mini"
+    password: "4HwDF0m7w9Zb"
+
+captive_portal:
+    

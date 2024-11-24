@@ -1,0 +1,32 @@
+esphome:
+  name: mmwave-georgias-room
+  friendly_name: mmwave-georgias-room
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "vV0VUgxpbVcQrDGzuFY11LcGK5VJqe74NJpIZ3h8JXk="
+
+ota:
+  - platform: esphome
+    password: "d97940b1e0e73dec0830379228389185"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Mmwave-Georgias-Room"
+    password: "vzn4DYKUeR6m"
+
+captive_portal:
+    

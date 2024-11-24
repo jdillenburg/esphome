@@ -1,0 +1,30 @@
+# This file is included as a package in all mmwave presence sensors
+# Requires area variable to be set to the name of the room the sensor is in.
+#
+esphome:
+  comment: "Beacon"
+
+# Adding external component to build:
+external_components:
+  - source: github://formatBCE/ESP32_BLE_presense@main
+
+# System time config - required for precise timestamps, used in integration:
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+
+# Initializing it:
+esp32_ble_presense:
+  area: "${area}" 
+  time_id: homeassistant_time
+
+# MQTT config - required for this component to work:
+mqtt:
+  broker: 10.0.0.215
+  username: esp32_presence
+  password: findme
+  discovery_prefix: "homeassistant"
+  port: 1883
+  client_id: "${area}"
+  keepalive: 
+    minutes: 10

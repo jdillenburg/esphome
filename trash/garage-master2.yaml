@@ -1,0 +1,69 @@
+esphome:
+  name: garage-control-master2
+  friendly_name: garage-control-master2
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+external_components:
+  - source:
+      type: git
+      url: https://github.com/ssieb/custom_components #Thanks for @ssieb components.
+    components: [ serial ]
+
+# Enable logging
+logger:
+  baud_rate: 0
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "ku0BYi9By5cFFEYDyETyZmszDR7Jphpz24uJzIbQTrg="
+
+ota:
+  password: "38913e884c1425dd1757bf7606abf233"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Garage-Master2 Fallback Hotspot"
+    password: "fRCUAI46FNga"
+
+captive_portal:
+
+
+uart:
+  rx_pin: GPIO22
+  tx_pin: GPIO23
+  baud_rate: 9600
+  data_bits: 8
+  stop_bits: 1
+  parity: NONE
+  debug:
+    direction: BOTH
+    dummy_receiver: false
+    after:
+      delimiter: "\n"
+    sequence:
+      - lambda: UARTDebug::log_string(direction, bytes);
+    
+text_sensor:
+  - platform: serial
+    name: Received slave text
+    id: slave_text
+
+text:
+  - platform: template
+    mode: text
+    name: Send to slave
+    id: send_to_slave
+    set_action:
+      then:
+        - uart.write: !lambda |-
+            std::string sendme = x + "\n";
+            return std::vector<uint8_t>(sendme.begin(), sendme.end());

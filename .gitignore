@@ -1,0 +1,14 @@
+# Gitignore settings for ESPHome
+# This is an example and may include too much for your use-case.
+# You can modify this file to suit your needs.
+
+# List of files to consider for check in
+!/garage-door-controller.yaml
+!/TFmini.h
+
+# Default ignored files
+/.esphome/
+/secrets.yaml
+# Only check in files NOT ignored here
+/*.yaml
+
