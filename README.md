@@ -9,6 +9,7 @@ Welcome to my ESPhome configuration directory.  This repository contains the ESP
 * LED Strip to display green for pulling vehicle into garage, yellow to slow down, and red to stop.
 * Sensor to read door open/close status.
 * Relay to push garage door controller button to open/close garage door.
+* 30 second timeout turns off LED lights after vehicle leaves or is parked.
 
 ### Files
 | File                          | Description                     |
