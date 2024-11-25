@@ -4,6 +4,8 @@ Welcome to my ESPhome configuration directory.  This repository contains the ESP
 * [Garage Door Controller](http://...#garage-door-controller)
 
 ## <a name="garage-door-controller">Garage Door Controller</a>
+![Garage Door Controller Home Assistant Dashboard](README_Assets/garage-door-controller-dashboard-example_small.png "Garage Door Controller Home Assistant Dashboard")
+
 ### Features
 * TFmini-S Sensor code to measure vehcile's distance from front of garage.  
 * LED Strip to display green for pulling vehicle into garage, yellow to slow down, and red to stop.

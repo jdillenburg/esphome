@@ -32,7 +32,7 @@ wifi:
   # Enable fallback hotspot (captive portal) in case wifi connection fails
   ap:
     ssid: "Garage-Door-Controller"
-    password: !secret garage_door_ap_password
+    password: "eXbhM8qXvoM3"
 
 captive_portal:
 
@@ -105,7 +105,7 @@ uart:
     after:
       delimiter: "\n"
     sequence:
-     - lambda: UARTDebug::log_string(direction, bytes);
+      - lambda: UARTDebug::log_string(direction, bytes);
 
 #******************** Binary Sensor *********************
 binary_sensor:
@@ -180,6 +180,56 @@ sensor:
       float current_count = id(effect_counter);
       id(effect_counter) = 0;
       return current_count/10.0;
+    #**************** TIMEOUT OF 30 SECONDS ************************
+    # See lights_off_when_still script for timeout value
+  - platform: template
+    name: "Vehicle average speed"
+    id: vehicle_average_speed
+    unit_of_measurement: "cm/s"
+    accuracy_decimals: 3
+    update_interval: 500ms
+    lambda: |-
+      static float previous_distance = 0;
+      static uint32_t last_update = 0;
+      float rate = 0;
+      
+      if (last_update != 0) {
+        float time_delta = (millis() - last_update) / 1000.0;
+        float value_delta = id(distance_sensor_raw).state - previous_distance;
+        rate = value_delta / time_delta;
+      }
+      
+      previous_distance = id(distance_sensor_raw).state;
+      last_update = millis();
+      
+      return rate;
+    filters:
+      - sliding_window_moving_average: 
+          window_size: 20 # average 10 seconds worth of speed
+          send_every: 1   # check average speed every 1/2 second
+    on_value: 
+      then:
+        - if:
+            condition: 
+              - lambda: 'return abs(id(vehicle_average_speed).state) < 1.0;' # 0.02 mph really slow!
+            then:
+              - if:
+                  condition:
+                    - and:
+                        - light.is_on: led_strip
+                        - not:
+                            script.is_running: lights_off_when_still
+                  then:
+                    script.execute: lights_off_when_still
+            else:
+              - if:
+                  condition:
+                    - light.is_off: led_strip
+                  then:
+                    - script.stop: lights_off_when_still
+                    - light.turn_on: 
+                        id: led_strip
+                        effect: "Distance Effect"
 
 #******************** Cover *********************
 cover:
@@ -196,7 +246,7 @@ cover:
     lambda: |-
       return id(closed_sensor).state ? COVER_OPEN : COVER_CLOSED;
 
-# LED Strip configuration
+#**********  LED Strip configuration **********
 light:
   - platform: esp32_rmt_led_strip
     rmt_channel: 1
@@ -278,3 +328,13 @@ light:
             it.range(start_index, end_index) = color;
             it.range(end_index, total_leds) = Color::BLACK;
             return;
+
+script:
+  - id: lights_off_when_still
+    mode: restart
+    then:
+      - delay: 30s
+      - light.turn_off: 
+          id: led_strip
+          transition_length:
+            seconds: 5
