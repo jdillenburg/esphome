@@ -16,8 +16,8 @@ Welcome to my ESPhome configuration directory.  This repository contains the ESP
 ### Files
 | File                          | Description                     |
 |-------------------------------|--------------------------------|
-| garage-door-controller.yaml   | ESPHome Code for garage door controller                 |
-| TFmini.h                      | Reads TFmini-S distance to car as a custom component    |
+| [garage-door-controller.yaml](https://github.com/jdillenburg/esphome/blob/main/garage-door-controller.yaml)   | ESPHome Code for garage door controller                 |
+| [TFmini.h](https://github.com/jdillenburg/esphome/blob/main/TFmini.h)                                         | Reads TFmini-S distance to car as a custom component    |
 
 ### Parts List
 Links go to Amazon.com.
