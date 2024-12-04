@@ -4,6 +4,9 @@ esphome:
   includes:
     - TFmini.h
 
+packages:
+  beacon: !include { file: packages/beacon.yaml, vars: { area: "Garage" }}
+
 substitutions:
   led_count: "60"
 
@@ -32,8 +35,13 @@ wifi:
   # Enable fallback hotspot (captive portal) in case wifi connection fails
   ap:
     ssid: "Garage-Door-Controller"
-    password: "eXbhM8qXvoM3"
+    password: !secret garage_door_ap_password
 
+web_server:
+  auth: 
+    username: johndillenburg
+    password: !secret garage_door_ap_password
+  
 captive_portal:
 
 globals:
