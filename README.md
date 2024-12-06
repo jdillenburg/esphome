@@ -13,6 +13,9 @@ Welcome to my ESPhome configuration directory.  This repository contains the ESP
 * Relay to push garage door controller button to open/close garage door.
 * 30 second timeout turns off LED lights after vehicle leaves or is parked.
 
+### Try it yourself!
+[Try the interactive simulator](https://jdillenburg.github.io/esphome)
+
 ### Files
 | File                          | Description                     |
 |-------------------------------|--------------------------------|
