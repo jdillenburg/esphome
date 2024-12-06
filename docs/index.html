@@ -6,6 +6,23 @@
     <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .content-list ul {
+            list-style-type: disc;
+            margin-left: 2rem;
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+        }
+        .content-list ul ul {
+            list-style-type: circle;
+            margin-left: 2rem;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .content-list li {
+            margin-bottom: 0.5rem;
+        }
+    </style>
 </head>
 <body class="bg-gray-50">
     <div class="max-w-4xl mx-auto p-8">
@@ -21,8 +38,9 @@
             </a>
         </div>
         
-        <div class="prose prose-lg mb-8 text-gray-600">
-            <p>This simulator demonstrates an ESP32-based parking assistance system that helps guide vehicles to the perfect parking position in a garage. The system uses:</p>            <ul>
+        <div class="content-list text-gray-600 mb-8">
+            <p>This simulator demonstrates an ESP32-based parking assistance system that helps guide vehicles to the perfect parking position in a garage. The system uses:</p>
+            <ul>
                 <li>An HC-SR04 ultrasonic distance sensor to detect the vehicle's position</li>
                 <li>A WS2812B LED strip providing visual feedback through color changes</li>
                 <li>Four distinct zones for precise parking guidance:
