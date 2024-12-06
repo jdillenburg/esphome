@@ -11,3 +11,6 @@
 # List of files to consider for check in
 !garage-door-controller.yaml
 !TFmini.h
+!/packages/
+!/packages/wifi.yaml
+!/packages/beacon.yaml

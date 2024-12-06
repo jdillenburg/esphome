@@ -1,0 +1,17 @@
+esphome:
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "${ssid}"
+    password: !secret ap_and_web_server_password
+
+web_server:
+  auth: 
+    username: johndillenburg
+    password: !secret ap_and_web_server_password
+
+captive_portal:
