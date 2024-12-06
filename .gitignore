@@ -4,6 +4,7 @@
 
 # Default ignored files
 /.esphome/
+/packages/.esphome/
 /secrets.yaml
 # Only check in files NOT ignored here
 *.yaml
