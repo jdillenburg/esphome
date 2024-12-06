@@ -14,3 +14,5 @@
 !/packages/
 !/packages/wifi.yaml
 !/packages/beacon.yaml
+!/README_Assets/*
+!/docs/*
