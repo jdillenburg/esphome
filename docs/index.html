@@ -2,13 +2,137 @@
 <html>
 <head>
     <title>Garage Parking Assistant</title>
-    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body>
     <div id="root"></div>
-    <script type="text/babel" src="simulator.js"></script>
+    <script type="text/babel">
+        const GarageParkingAssistant = () => {
+            const [distance, setDistance] = React.useState(2.5);
+            const [isWarningState, setIsWarningState] = React.useState(false);
+            const [warningBlink, setWarningBlink] = React.useState(false);
+
+            // Constants from the configuration
+            const MIN_DISTANCE = 0.5;
+            const BUFFER_DISTANCE = 0.1;
+            const MAX_DISTANCE = 4.0;
+            const NUM_LEDS = 60;
+            
+            // Calculate boundaries
+            const minSafe = MIN_DISTANCE - BUFFER_DISTANCE;
+            const maxSafe = MIN_DISTANCE + BUFFER_DISTANCE;
+
+            // Warning blink effect
+            React.useEffect(() => {
+                let interval;
+                if (isWarningState) {
+                    interval = setInterval(() => {
+                        setWarningBlink(prev => !prev);
+                    }, 500);
+                }
+                return () => clearInterval(interval);
+            }, [isWarningState]);
+
+            // Calculate LED colors based on distance
+            const calculateLEDs = () => {
+                if (distance < minSafe) {
+                    return Array(NUM_LEDS).fill(warningBlink ? '#ff0000' : '#000000');
+                }
+
+                const leds = Array(NUM_LEDS).fill('#000000');
+                const center = Math.floor(NUM_LEDS / 2);
+
+                if (distance <= maxSafe) {
+                    return Array(NUM_LEDS).fill('#ff0000');
+                } else if (distance >= MAX_DISTANCE) {
+                    return Array(NUM_LEDS).fill('#00ff00');
+                } else {
+                    const distanceRatio = (distance - maxSafe) / (MAX_DISTANCE - maxSafe);
+                    const ledsToLight = Math.max(2, Math.ceil(NUM_LEDS * distanceRatio));
+                    const halfLeds = Math.floor(ledsToLight / 2);
+                    
+                    const red = Math.floor(255 * (1 - distanceRatio));
+                    const green = Math.floor(255 * distanceRatio);
+                    const color = `#${red.toString(16).padStart(2, '0')}${green.toString(16).padStart(2, '0')}00`;
+                    
+                    for (let i = 0; i < halfLeds; i++) {
+                        leds[center + i] = color;
+                        leds[center - 1 - i] = color;
+                    }
+                }
+                return leds;
+            };
+
+            // Update warning state when distance changes
+            React.useEffect(() => {
+                setIsWarningState(distance < minSafe);
+            }, [distance]);
+
+            const leds = calculateLEDs();
+
+            return (
+                <div className="max-w-2xl mx-auto p-6">
+                    <div className="bg-white shadow-lg rounded-lg p-6">
+                        <h2 className="text-2xl font-bold mb-6">Garage Parking Assistant Simulator</h2>
+                        
+                        <div className="space-y-6">
+                            <div className="flex items-center space-x-4">
+                                <span className="min-w-24">Distance: {distance.toFixed(2)}m</span>
+                                <input 
+                                    type="range"
+                                    value={distance}
+                                    onChange={(e) => setDistance(Number(e.target.value))}
+                                    min="0"
+                                    max={MAX_DISTANCE}
+                                    step="0.1"
+                                    className="w-full"
+                                />
+                            </div>
+                            
+                            <div className="relative w-full h-8 bg-gray-200 rounded-full overflow-hidden">
+                                <div className="flex h-full">
+                                    {leds.map((color, index) => (
+                                        <div
+                                            key={index}
+                                            className="flex-1 h-full transition-colors duration-200"
+                                            style={{ backgroundColor: color }}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="space-y-2 text-sm">
+                                <div>Status Zones:</div>
+                                <div className="flex items-center space-x-2">
+                                    <div className="w-4 h-4 bg-red-500"/> 
+                                    <span>Too Close Zone (&lt; {minSafe}m)</span>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <div className="w-4 h-4 bg-red-500"/>
+                                    <span>Buffer Zone ({minSafe}m - {maxSafe}m)</span>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <div className="w-4 h-4" style={{background: 'linear-gradient(to right, #ff0000, #00ff00)'}}/>
+                                    <span>Approach Zone ({maxSafe}m - {MAX_DISTANCE}m)</span>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <div className="w-4 h-4 bg-green-500"/>
+                                    <span>Safe Zone (&gt; {MAX_DISTANCE}m)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(
+            <GarageParkingAssistant />,
+            document.getElementById('root')
+        );
+    </script>
 </body>
 </html>
