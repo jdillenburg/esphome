@@ -96,7 +96,7 @@ interval:
 
 number:
   - platform: template
-    name: ${upper_devicename} LD1125H mth1 mov #mth1 mov is 0~2.8m motion detection threshold.
+    name: ${device_name} LD1125H mth1 mov #mth1 mov is 0~2.8m motion detection threshold.
     id: LD1125H_mth1_mov
     icon: "mdi:cogs"
     optimistic: true
@@ -113,7 +113,7 @@ number:
               std::string th1st = "mth1_mov=" + str_sprintf("%.0f",x) +"\r\n";
               return std::vector<uint8_t>(th1st.begin(), th1st.end());
   - platform: template
-    name: ${upper_devicename} LD1125H mth2 mov #mth2 mov is 2.8~8m motion detection threshold.
+    name: ${device_name} LD1125H mth2 mov #mth2 mov is 2.8~8m motion detection threshold.
     id: LD1125H_mth2_mov
     icon: "mdi:cogs"
     optimistic: true
@@ -130,7 +130,7 @@ number:
               std::string th2st = "mth2_mov=" + str_sprintf("%.0f",x) +"\r\n";
               return std::vector<uint8_t>(th2st.begin(), th2st.end());
   - platform: template
-    name: ${upper_devicename} LD1125H mth3 mov #mth3 mov is above 8m motion detection threshold.
+    name: ${device_name} LD1125H mth3 mov #mth3 mov is above 8m motion detection threshold.
     id: LD1125H_mth3_mov
     icon: "mdi:cogs"
     optimistic: true
@@ -147,7 +147,7 @@ number:
               std::string th3st = "mth3_mov=" + str_sprintf("%.0f",x) +"\r\n";
               return std::vector<uint8_t>(th3st.begin(), th3st.end());
   - platform: template
-    name: ${upper_devicename} LD1125H mth1 occ #mth1 occ is 0~2.8m detection threshold.
+    name: ${device_name} LD1125H mth1 occ #mth1 occ is 0~2.8m detection threshold.
     id: LD1125H_mth1_occ
     icon: "mdi:cogs"
     optimistic: true
@@ -164,7 +164,7 @@ number:
               std::string th1st = "mth1_occ=" + str_sprintf("%.0f",x) +"\r\n";
               return std::vector<uint8_t>(th1st.begin(), th1st.end());
   - platform: template
-    name: ${upper_devicename} LD1125H mth2 occ #mth2 occ is 2.8~8m detection threshold.
+    name: ${device_name} LD1125H mth2 occ #mth2 occ is 2.8~8m detection threshold.
     id: LD1125H_mth2_occ
     icon: "mdi:cogs"
     optimistic: true
@@ -181,7 +181,7 @@ number:
               std::string th2st = "mth2_occ=" + str_sprintf("%.0f",x) +"\r\n";
               return std::vector<uint8_t>(th2st.begin(), th2st.end());
   - platform: template
-    name: ${upper_devicename} LD1125H mth3 occ #mth3 occ is above 8m detection threshold.
+    name: ${device_name} LD1125H mth3 occ #mth3 occ is above 8m detection threshold.
     id: LD1125H_mth3_occ
     icon: "mdi:cogs"
     optimistic: true
@@ -198,7 +198,7 @@ number:
               std::string th3st = "mth3_occ=" + str_sprintf("%.0f",x) +"\r\n";
               return std::vector<uint8_t>(th3st.begin(), th3st.end());
   - platform: template
-    name: ${upper_devicename} LD1125H rmax #rmax is max detection distance.
+    name: ${device_name} LD1125H rmax #rmax is max detection distance.
     id: LD1125H_rmax
     icon: "mdi:cogs"
     optimistic: true
@@ -215,7 +215,7 @@ number:
               std::string rmaxst = "rmax=" + str_sprintf("%.1f",x) +"\r\n";
               return std::vector<uint8_t>(rmaxst.begin(), rmaxst.end());
   - platform: template
-    name: ${upper_devicename} LD1125H Clearence Time
+    name: ${device_name} LD1125H Clearence Time
     id: LD1125H_Clear_Time
     icon: "mdi:cogs"
     optimistic: true
@@ -225,7 +225,7 @@ number:
     max_value: 60
     step: 0.5
   - platform: template
-    name: ${upper_devicename} LD1125H Movement Time
+    name: ${device_name} LD1125H Movement Time
     id: LD1125H_Mov_Time
     icon: "mdi:cogs"
     optimistic: true
@@ -236,7 +236,7 @@ number:
     step: 0.5
 sensor:
   - platform: template
-    name: ${upper_devicename} LD1125H Distance
+    name: ${device_name} LD1125H Distance
     id: LD1125H_Distance
     icon: "mdi:signal-distance-variant"
     unit_of_measurement: "m"
@@ -249,7 +249,7 @@ sensor:
 text_sensor:
   - platform: serial
     uart_id: LD1125H_UART_BUS
-    name: ${upper_devicename} LD1125H UART Text
+    name: ${device_name} LD1125H UART Text
     id: LD1125H_UART_Text
     icon: "mdi:format-text"
     internal: True #If Don't Want to See UART Receive Data, Set To True
@@ -290,15 +290,15 @@ text_sensor:
           }
         }
   - platform: template
-    name: ${upper_devicename} LD1125H Occupancy Status
+    name: ${device_name} LD1125H Occupancy Status
     id: LD1125H_Occupancy
     icon: "mdi:motion-sensor"
 binary_sensor:
   - platform: template
-    name: ${upper_devicename} LD1125H Occupancy or Movement
+    name: ${device_name} LD1125H Occupancy or Movement
     id: LD1125H_MovOcc_Binary
     device_class: occupancy
   - platform: template
-    name: ${upper_devicename} LD1125H Movement
+    name: ${device_name} LD1125H Movement
     id: LD1125H_Mov_Binary
     device_class: motion

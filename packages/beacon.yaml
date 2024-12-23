@@ -16,13 +16,3 @@ bluetooth_proxy:
 
 esp32_ble_tracker:
 
-# MQTT config - required for this component to work:
-# mqtt:
-#   broker: 10.0.0.215
-#   username: esp32_presence
-#   password: findme
-#   discovery_prefix: "homeassistant"
-#   port: 1883
-#   client_id: "${area}"
-#   keepalive: 
-#     minutes: 10

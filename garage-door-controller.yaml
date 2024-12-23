@@ -36,6 +36,9 @@ globals:
   - id: effect_counter 
     type: int
     initial_value: '0'
+  - id: safe_zone
+    type: bool
+    initial_value: 'false'
 
 # Garage door button on GPIO16
 switch:
@@ -106,6 +109,23 @@ binary_sensor:
     pin: GPIO23
     id: closed_sensor
     internal: True
+  - platform: template
+    id: parked_sensor
+    name: "Car parked"
+  - platform: template
+    id: car_exiting
+    name: "Car exiting"
+    condition:
+      sensor.in_range:
+        id: vehicle_average_speed
+        above: 1.0
+  - platform: template
+    id: car_entering
+    name: "Car entering"
+    condition:
+      sensor.in_range:
+        id: vehicle_average_speed
+        below: -1.0 
 
 #******************** Sensor *********************
 sensor:
@@ -198,8 +218,8 @@ sensor:
       return rate;
     filters:
       - sliding_window_moving_average: 
-          window_size: 20 # average 10 seconds worth of speed
-          send_every: 1   # check average speed every 1/2 second
+          window_size: 10 # average 10 x 0.5 seconds = 5 seconds worth of speed
+          send_every: 1   # send average speed every 1/2 second
     on_value: 
       then:
         - if:
@@ -223,6 +243,9 @@ sensor:
                     - light.turn_on: 
                         id: led_strip
                         effect: "Distance Effect"
+                    - binary_sensor.template.publish:
+                        id: parked_sensor
+                        state: false
 
 #******************** Cover *********************
 cover:
@@ -282,6 +305,7 @@ light:
             // solid red in safe zone
             if (distance < max_safe) {
               it.all() = Color(255,0,0);
+              id(safe_zone) = true;
               return;
             }
 
@@ -331,3 +355,10 @@ script:
           id: led_strip
           transition_length:
             seconds: 5
+      - if:
+          condition:
+            - lambda: 'return id(safe_zone);'
+          then:
+            - binary_sensor.template.publish:
+                id: parked_sensor
+                state: true
