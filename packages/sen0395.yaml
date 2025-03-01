@@ -1,6 +1,5 @@
 esphome:
-  includes:
-    - leapmmw_sensor.h
+  comment: Sen0395
 
 # Disable uart logging
 logger:
@@ -8,7 +7,7 @@ logger:
   level: DEBUG
 
 uart:
-  id: SEN095_UART_BUS
+  id: SEN0395_UART_BUS
   rx_pin: ${uart_rx_pin}
   tx_pin: ${uart_tx_pin}
   baud_rate: 115200
@@ -17,6 +16,7 @@ uart:
   parity: NONE
 
 dfrobot_sen0395:
+  - uart_id: SEN0395_UART_BUS
 
 binary_sensor:
   - platform: gpio
@@ -26,139 +26,50 @@ binary_sensor:
     pin:
       number: ${presence_pin}
       mode: INPUT_PULLDOWN
-    # when motion is detected, the radar sensor is on so publish radar state to HA
-    on_press:
-      then:
-        lambda: !lambda |-
-          if (!id(mmwave_sensor).state) {
-            id(mmwave_sensor).publish_state(true);
-          }
-
-sensor:      
-  - platform: custom
-    lambda: |-
-      auto s = new leapmmw(id(SEN095_UART_BUS));
-      App.register_component(s);
-      return {};
-    sensors:
-
-switch:
-  - platform: template
-    name: "${device_name_pretty} mmwave_sensor"
-    id: mmwave_sensor # do not change
-    entity_category: config
-    optimistic: true
-    turn_on_action:
-      - uart.write: "setUartOutput 1 0"
-      - delay: 1s
-      - uart.write: "saveConfig"
-      - delay: 4s 
-      - uart.write: "sensorStart"
-    turn_off_action:
-      - uart.write: "sensorStop"
-      - delay: 2s
-
-  - platform: template
-    name: "${device_name_pretty} led"
-    id: led  # do not change
-    entity_category: config
-    optimistic: true
-    turn_on_action:
-      - switch.turn_off: mmwave_sensor
-      - delay: 2s
-      - uart.write: "setLedMode 1 0"
-      - delay: 3s
-      - lambda: |-
-          leapmmw(id(SEN095_UART_BUS)).getmmwConf("getLedMode 1");
-      - delay: 2s 
-      - switch.turn_on: mmwave_sensor
-    turn_off_action:
-      - switch.turn_off: mmwave_sensor
-      - delay: 2s
-      - uart.write: "setLedMode 1 1"
-      - delay: 3s
-      - lambda: |-
-          leapmmw(id(SEN095_UART_BUS)).getmmwConf("getLedMode 1");
-      - delay: 2s
-      - switch.turn_on: mmwave_sensor 
 
 number:
-  - platform: template
-    name: "${device_name_pretty} distance"
-    id: distance # do not change
-    entity_category: config
-    min_value: 0.15
-    max_value: 9.45
-    step: 0.15
-    unit_of_measurement: M
-    mode: box
-    lambda: |-
-      leapmmw(id(SEN095_UART_BUS)).getmmwConf("getRange");
-      return {};
-    set_action:
-      - switch.turn_off: mmwave_sensor
-      - delay: 2s
-      - uart.write: !lambda
-          std::string range = "setRange 0 " + str_sprintf("%.2f", x);
-          return std::vector<unsigned char>(range.begin(), range.end());
-      - delay: 3s
-      - switch.turn_on: mmwave_sensor 
+  # - platform: template
+  #   name: "${device_name_pretty} distance"
+  #   id: distance # do not change
+  #   entity_category: config
+  #   min_value: 0.15
+  #   max_value: 9.45
+  #   step: 0.15
+  #   unit_of_measurement: M
+  #   mode: box
+  #   lambda: 'return {};'
+  #   set_action:
+  #     - dfrobot_sen0395.settings:
+  #         detection_segments:
+  #           - !lambda |-
+  #               return 0;
+  #           - !lambda |-
+  #               return id(distance).state;
       
-  - platform: template
-    name: "${device_name_pretty} latency"
-    id: latency # do not change
-    entity_category: config
-    min_value: 1
-    max_value: 600
-    lambda: |-
-      leapmmw(id(SEN095_UART_BUS)).getmmwConf("getLatency");
-      return {};
-    step: 1
-    unit_of_measurement: s
-    mode: box
-    set_action:
-      - switch.turn_off: mmwave_sensor
-      - delay: 2s
-      - uart.write: !lambda
-          std::string setL = "setLatency 0.1 " + str_sprintf("%.0f", x);
-          return std::vector<unsigned char>(setL.begin(), setL.end());
-      - delay: 3s
-      - switch.turn_on: mmwave_sensor
+  # - platform: template
+  #   name: "${device_name_pretty} latency"
+  #   id: latency # do not change
+  #   entity_category: config
+  #   min_value: 1
+  #   max_value: 600
+  #   step: 1
+  #   unit_of_measurement: s
+  #   mode: box
+  #   lambda: 'return {};'
+  #   set_action:
+  #     - dfrobot_sen0395.settings:
+  #         output_latency:
+  #           delay_after_detect: 0s
+  #           delay_after_disappear: !lambda 'return id(latency).state * 1.0f;'
 
-  - platform: template
-    name: "${device_name_pretty} sensitivity"
-    id: sensitivity # do not change
-    entity_category: config
-    min_value: 0
-    max_value: 9
-    lambda: |-
-      leapmmw(id(SEN095_UART_BUS)).getmmwConf("getSensitivity");
-      return {};
-    step: 1
-    set_action:
-      - switch.turn_off: mmwave_sensor
-      - delay: 2s
-      - uart.write: !lambda
-          std::string mss = "setSensitivity " + to_string((int)x);
-          return std::vector<unsigned char>(mss.begin(), mss.end());
-      - delay: 3s
-      - switch.turn_on: mmwave_sensor
-
-button:
-  - platform: restart
-    name: Restart_ESP_${device_name}
-    entity_category: diagnostic
-    on_press:
-      - uart.write:
-          id: SEN095_UART_BUS
-          data: "resetSystem 0"
-
-  - platform: template
-    name: factory_reset_mmwMCU_${device_name}
-    id: factory_reset_mmwMCU
-    entity_category: diagnostic
-    on_press:
-      - switch.turn_off: mmwave_sensor
-      - delay: 2s
-      - uart.write: "resetCfg"
-      - delay: 3s
+  # - platform: template
+  #   name: "${device_name_pretty} sensitivity"
+  #   id: sensitivity # do not change
+  #   entity_category: config
+  #   min_value: 0
+  #   max_value: 9
+  #   step: 1
+  #   lambda: 'return {};'
+  #   set_action:
+  #     - dfrobot_sen0395.settings:
+  #         sensitivity: !lambda 'return (int32_t)id(sensitivity).state;'

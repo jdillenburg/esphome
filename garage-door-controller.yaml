@@ -1,13 +1,15 @@
 esphome:
   name: garage-door-controller
   friendly_name: Garage door controller
-  includes:
-    - TFmini.h
 
 packages:
   beacon: !include { file: packages/beacon.yaml }
   wifi: !include { file: packages/wifi.yaml, vars: { ssid: "garage-door-controller" }}
 
+external_components:
+  - source: external_components/esphome-tfmini
+    components: [ tfmini ]
+    
 substitutions:
   led_count: "60"
 
@@ -15,6 +17,7 @@ esp32:
   board: esp32dev
   framework:
     type: arduino
+    
 
 # Enable logging
 logger:
@@ -50,8 +53,9 @@ switch:
     restore_mode: ALWAYS_OFF
     on_turn_on:
       then:
-        - delay: 100ms
+        - delay: 30000ms
         - switch.turn_off: relay
+
 
 # configurable distance thresholds
 number:
@@ -129,29 +133,25 @@ binary_sensor:
 
 #******************** Sensor *********************
 sensor:
-  - platform: custom
-    lambda: |-
-      auto distance_sensor = new TFminiSensor(id(uart_bus));
-      App.register_component(distance_sensor);
-      return {distance_sensor};
-    sensors:
-      id: distance_sensor_raw
-      internal: True
-      name: "Distance sensor raw"
-      unit_of_measurement: "cm"
-      on_value: 
-        then:
-          - sensor.template.publish:
-              id: distance_sensor
-              state: !lambda 'return x;'
-          - sensor.template.publish:
-              id: distance_sensor_leds
-              state: !lambda 'return x;'
-          - lambda: |-
-              id(sensor_counter) = id(sensor_counter) + 1;
-          # - sensor.template.publish:
-          #     id: reading_sensor_counter
-          #     state: !lambda 'return id(reading_counter).state + 1;'
+  - platform: tfmini
+    id: distance_sensor_raw
+    internal: True
+    distance_unit: cm
+    name: "Distance sensor raw"
+    unit_of_measurement: "cm"
+    on_value: 
+      then:
+        - sensor.template.publish:
+            id: distance_sensor
+            state: !lambda 'return x;'
+        - sensor.template.publish:
+            id: distance_sensor_leds
+            state: !lambda 'return x;'
+        - lambda: |-
+            id(sensor_counter) = id(sensor_counter) + 1;
+        # - sensor.template.publish:
+        #     id: reading_sensor_counter
+        #     state: !lambda 'return id(reading_counter).state + 1;'
   - platform: template
     name: "Distance sensor"
     id: distance_sensor
@@ -291,6 +291,13 @@ light:
             // Measure update rate
             id(effect_counter) = id(effect_counter) + 1;
 
+            // Set safe_zone flag based on distance
+            if (distance >= min_safe && distance <= max_safe) {
+              id(safe_zone) = true;
+            } else {
+              id(safe_zone) = false;
+            }
+
             // blink if less than min_safe
             if (distance < min_safe) {
               if ((millis() % 1000) < 500) {
@@ -305,7 +312,6 @@ light:
             // solid red in safe zone
             if (distance < max_safe) {
               it.all() = Color(255,0,0);
-              id(safe_zone) = true;
               return;
             }
 
