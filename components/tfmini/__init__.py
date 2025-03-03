@@ -4,6 +4,8 @@ from esphome.const import CONF_ID
 
 DEPENDENCIES = ['uart']
 AUTO_LOAD = ['sensor']
+CODEOWNERS = ["@jdillenburg"]  
+
 
 tfmini_ns = cg.esphome_ns.namespace('tfmini')
 TFMiniComponent = tfmini_ns.class_('TFMiniComponent', cg.Component)

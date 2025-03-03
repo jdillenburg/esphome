@@ -6,6 +6,7 @@ Welcome to my ESPhome configuration directory. This repository contains the ESPh
 | Component | Description |
 |-----------|-------------|
 | [TFmini](components/tfmini) | External component for the TFmini-S time of flight distance sensor with distance, signal strength, and temperature readings |
+| [Adxl345](components/adxl345) | External component for the ADXL345 accelerometer.  Measures acceleration along x, y and z axes. |
 
 ## Devices
 

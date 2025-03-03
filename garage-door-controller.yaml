@@ -7,7 +7,7 @@ packages:
   wifi: !include { file: packages/wifi.yaml, vars: { ssid: "garage-door-controller" }}
 
 external_components:
-  - source: github://jdillenburg/esphome@master
+  - source: github://jdillenburg/esphome@main
     components: [ tfmini ]
     
 substitutions:
