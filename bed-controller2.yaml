@@ -1,0 +1,345 @@
+#
+# EspHome device that controls the inclination of a bed.  Assumes the Esp32
+#   is connected to a 12V motor via a motor controller with GPIO4 and 5 
+#   connected to the forward and reverse PWM inputs.  Also requires an 
+#   ADXL345 accelerometer that is mounted under the bed frame in such a way
+#   that its tilt angle can be determined based on it becoming "off_vertical".
+#   This is used to stop the bed motor once the ADXL345 tells this Esp32 the
+#   bed is inclined as desired.  I also have an LCD readout but that is optional.
+#
+esphome:
+  name: bed-controller2
+  friendly_name: Bed Controller2
+  on_boot:
+    # network not up yet when at 600 priority
+    - priority: 600
+      then:
+        - light.turn_on: 
+            id: onboard_led
+            red: 100%
+            green: 0%
+            blue: 0%
+    # network and mqtt are up, turn light green off and enable motor
+    - priority: 200
+      then:
+        - output.turn_on: motor_ren
+        - output.turn_on: motor_len
+        - delay: 10s
+        - light.turn_off: 
+            id: onboard_led
+        - lambda: |-
+            id(lcd).no_backlight();
+
+  comment: esp32-c3-devkitm-1
+
+  libraries:
+    - "Wire"
+    - "SPI"
+    - "Adafruit BusIO"
+    - "Adafruit Unified Sensor"
+    - "Adafruit ADXL345"
+
+external_components:
+  - source:
+      type: git
+      url: https://github.com/jdillenburg/esphome
+      ref: main
+    components: [ adxl345 ]
+
+packages:
+  wifi: !include { file: "packages/wifi.yaml", vars: { ssid: "bed-controller" }}
+
+esp32:
+  board: esp32-c3-devkitm-1
+  framework:
+    type: arduino
+
+# Enable logging
+logger:
+  level: WARN
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret bed_controller2_api_key
+
+ota:
+  - platform: esphome
+    password: "630cb512ba32dcd66c55220b3921a0b0"
+
+# Sync time with Home Assistant.
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+
+# Text sensors with general information.
+text_sensor:
+  # Expose ESPHome version as sensor.
+  - platform: version
+    name: ESPHome Version
+  # Expose WiFi information as sensors.
+  - platform: wifi_info
+    ip_address:
+      name: IP
+    ssid:
+      name: SSID
+    bssid:
+      name: BSSID
+
+switch:
+  - platform: restart
+    name: "Restart"
+
+globals:
+  - id: motor_speed
+    type: float
+    restore_value: False
+    initial_value: '10'
+  - id: num_speeds
+    type: int
+    restore_value: False
+    initial_value: '2'
+  - id: motor_dir_char
+    type: std::string
+    initial_value: '"+"'
+
+output:
+  - platform: ledc
+    pin: GPIO4
+    id: motor_forward_pin
+  - platform: ledc
+    pin: GPIO5
+    id: motor_reverse_pin
+  - platform: gpio
+    pin: GPIO6
+    id: motor_ren
+  - platform: gpio
+    pin: GPIO7
+    id: motor_len
+
+fan:
+  - platform: hbridge
+    id: bed_motor
+    name: "Bed Motor"
+    pin_a: motor_forward_pin
+    pin_b: motor_reverse_pin
+    decay_mode: slow
+
+number:
+  - platform: template
+    name: Lower limit
+    id: bed_lower_limit
+    icon: "mdi:cogs"
+    optimistic: true
+    restore_value: true 
+    initial_value: "0.0"
+    min_value: -90.0
+    max_value: 90.0
+    step: 1.0
+    unit_of_measurement: degrees
+    on_value: 
+      then:
+        - script.execute: start_motor_if_needed
+  - platform: template
+    name: Upper limit
+    id: bed_upper_limit
+    icon: "mdi:cogs"
+    optimistic: true
+    restore_value: true 
+    initial_value: "45.0"
+    min_value: -90.0
+    max_value: 90.0
+    step: 1.0
+    unit_of_measurement: degrees
+    on_value: 
+      then:
+        - script.execute: start_motor_if_needed
+  - platform: template
+    name: Accuracy
+    id: accuracy
+    icon: "mdi:cogs"
+    optimistic: true
+    restore_value: true  # If you don't want to store the setting at ESP, set it to false.
+    initial_value: "2.0" # Default accuracy Setting 2%
+    min_value: 0.0
+    max_value: 100.0
+    step: 1.0
+    on_value: 
+      then:
+        - script.execute: start_motor_if_needed
+  - platform: template
+    name: Desired percentage
+    id: bed_desired_position
+    icon: "mdi:cogs"
+    optimistic: true
+    restore_value: true   # If you don't want to store the setting at ESP, set it to false.
+    initial_value: "0.0"  # Default desired position Setting
+    min_value: 0.0
+    max_value: 100.0
+    step: 1.0
+    unit_of_measurement: percentage
+    on_value: 
+      then:
+        - script.execute: start_motor_if_needed
+  - platform: template
+    name: Max motor speed
+    id: max_speed
+    icon: "mdi:cogs"
+    optimistic: true
+    restore_value: true    # If you don't want to store the setting at ESP, set it to false.
+    initial_value: "90.0"  # Default desired max_speed setting
+    min_value: 0.0
+    max_value: 100.0
+    step: 5.0
+    unit_of_measurement: percentage
+    on_value: 
+      then:
+        - script.execute: start_motor_if_needed
+
+light:
+  - platform: neopixelbus
+    variant: WS2812
+    pin: GPIO8
+    num_leds: 1
+    type: GRB
+    restore_mode: RESTORE_DEFAULT_ON
+    id: onboard_led
+    name: "Status light"
+    # turn LCD backlight on and off along with status LED
+    on_turn_off: 
+      then:
+        - lambda: |-
+           id(lcd).no_backlight();
+    on_turn_on: 
+      then:
+        - lambda: |-
+           id(lcd).backlight();
+
+i2c:
+  sda: GPIO0
+  scl: GPIO1
+  frequency: 400kHz
+
+adxl345:
+  id: adxl345_sensor
+  address: 0x53
+  update_interval: 100ms
+  off_vertical:
+    id: bed_angle
+    name: "Bed Angle"
+    unit_of_measurement: degrees
+    filters:
+      - sliding_window_moving_average:
+          window_size: 5
+          send_every: 5
+      - throttle_average: 10s
+    on_value:
+      then:
+        - lambda: |-
+            id(bed_position).publish_state(100 * (id(bed_angle).state - id(bed_lower_limit).state) / (id(bed_upper_limit).state - id(bed_lower_limit).state));
+        - script.execute: start_motor_if_needed
+  jitter:
+    id: jitter_raw
+    internal: True
+    unit_of_measurement: "m/s²"
+    accuracy_decimals: 3
+    
+sensor:
+  - platform: template
+    id: bed_position
+    accuracy_decimals: 0
+    name: "Bed Position"
+    update_interval: never
+    lambda: return 100 * (id(bed_angle).state - id(bed_lower_limit).state) / (id(bed_upper_limit).state - id(bed_lower_limit).state);
+
+
+script:
+  - id: calc_motor_speed
+    then:
+      - lambda: |-
+          float diff = abs(id(bed_desired_position).state - id(bed_position).state);
+          float speed_size = id(max_speed).state / id(num_speeds);
+          if (diff > 20) {
+            id(motor_speed) = id(max_speed).state;
+          }
+          else if (diff > 10 && id(num_speeds) > 1) {
+            id(motor_speed) = speed_size * 2;
+          }
+          else {
+            id(motor_speed) = speed_size;
+          }
+  - id: start_motor_if_needed
+    then:
+      - script.execute: calc_motor_speed
+      - if:
+          condition:
+            lambda: 'return id(bed_position).state < -id(accuracy).state;'
+          then:
+            - logger.log: 'bed lower then lower limit!'
+            - fan.turn_on:
+                id: bed_motor
+                direction: FORWARD
+                speed:
+                  !lambda |-
+                    id(motor_dir_char) = "+";
+                    return id(motor_speed);
+          else:
+            - if:
+                condition:
+                  lambda: 'return id(bed_position).state > 100.0 + id(accuracy).state;'
+                then:
+                  - logger.log: 'bed higher than high limit!'
+                  - fan.turn_on:
+                      id: bed_motor
+                      direction: REVERSE
+                      speed: 
+                        !lambda |-
+                          id(motor_dir_char) = "-";
+                          return id(motor_speed);
+                else:
+                  - if: 
+                      condition: 
+                        - lambda: 'return id(bed_position).state < id(bed_desired_position).state - id(accuracy).state;'
+                      then:
+                        - logger.log: 'bed lower than desired, moving up'
+                        - fan.turn_on: 
+                            id: bed_motor
+                            direction: FORWARD
+                            speed: 
+                              !lambda |-
+                                id(motor_dir_char) = "+";
+                                return id(motor_speed);
+                      else:
+                        - if:
+                            condition:
+                              - lambda: 'return id(bed_position).state > id(bed_desired_position).state + id(accuracy).state;'
+                            then:
+                              - logger.log: 'bed higher than desired, moving down'
+                              - fan.turn_on:
+                                  id: bed_motor
+                                  direction: REVERSE
+                                  speed:
+                                    !lambda |-
+                                      id(motor_dir_char) = "-";
+                                      return id(motor_speed);
+                            else:
+                              - fan.turn_off: bed_motor
+                              - lambda: |-
+                                  id(motor_dir_char) = " ";
+                                  id(motor_speed) = 0.0;
+  
+display:
+  - platform: lcd_pcf8574
+    id: lcd
+    dimensions: 16x2
+    address: 0x27
+    update_interval: 30s
+    lambda: |-
+      static bool toggle = false;
+      toggle = !toggle;
+      
+      if (toggle) {
+        it.printf(0, 0, "I:%.0f%%  ", id(bed_desired_position).state);
+      } else {
+        it.printf(0, 1, "D:%.0f%%  ", id(bed_position).state);
+      }
