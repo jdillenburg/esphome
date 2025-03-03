@@ -11,6 +11,7 @@ Welcome to my ESPhome configuration directory. This repository contains the ESPh
 ## Devices
 
 * [Garage Door Controller](#garage-door-controller)
+* [Bed Controller](#bed-controller)
 
 ## <a name="garage-door-controller">Garage Door Controller</a>
 ![Garage Door Controller Home Assistant Dashboard](README_Assets/garage-door-controller-dashboard-example_small.png "Garage Door Controller Home Assistant Dashboard")
@@ -62,3 +63,50 @@ external_components:
 ```
 
 See the [TFmini component documentation](components/tfmini) for more details on configuration options.
+
+## <a name="bed-controller">Bed Controller</a>
+
+### Features
+* Controls the inclination of an adjustable bed using a motor controller
+* ADXL345 accelerometer to measure and track bed angle
+* LCD display showing current and desired position
+* Status LED for visual feedback
+* Home Assistant integration with controls for:
+  * Setting desired position percentage
+  * Setting upper and lower angle limits
+  * Adjusting accuracy tolerance
+  * Controlling motor speed
+
+### Files
+| File                          | Description                     |
+|-------------------------------|--------------------------------|
+| [bed-controller2.yaml](https://github.com/jdillenburg/esphome/blob/main/bed-controller2.yaml) | ESPHome code for bed angle controller |
+| [components/adxl345](components/adxl345) | ADXL345 external component for measuring bed angle |
+
+### Parts List
+* ESP32-C3-DevKitM-1 board
+* ADXL345 accelerometer - mounted under the bed frame
+* 12V motor with motor controller (requires PWM inputs)
+* LCD display with PCF8574 I2C adapter (16x2)
+* WS2812 RGB LED for status indication
+
+### Hook Up
+1. Connect GPIO4 and GPIO5 to the motor controller's forward and reverse PWM inputs
+2. Connect GPIO6 and GPIO7 to the motor controller's enable pins
+3. Connect the ADXL345 accelerometer via I2C (SDA to GPIO0, SCL to GPIO1)
+4. Connect the LCD display via I2C (address 0x27, same I2C bus as the accelerometer)
+5. Connect assumes RGB LED connected to GPIO8 for status indication.  My ESP32 had this built-in.
+
+### Software Install
+Add the ADXL345 external component to your configuration:
+
+```yaml
+external_components:
+  - source:
+      type: git
+      url: https://github.com/jdillenburg/esphome
+      ref: main
+    components: [ adxl345 ]
+```
+
+See the [ADXL345 component documentation](components/adxl345) for more details on configuration options.
