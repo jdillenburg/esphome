@@ -218,7 +218,7 @@ sensor:
       return rate;
     filters:
       - sliding_window_moving_average: 
-          window_size: 10 # average 10 x 0.5 seconds = 5 seconds worth of speed
+          window_size: 5 # average 5 x 0.5 seconds = 2.5 seconds worth of speed
           send_every: 1   # send average speed every 1/2 second
     on_value: 
       then:

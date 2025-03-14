@@ -46,16 +46,11 @@ libraries:
 ### Basic Configuration
 
 ```yaml
-# Define component
+# Define component and sensors for accel_x, accel_y and accel_z
 adxl345:
   - id: my_adxl345
     address: 0x53
     update_interval: 100ms
-
-# Define sensors from component
-sensor:
-  - platform: adxl345
-    id: my_adxl345
     accel_x:
       name: "Acceleration X"
     accel_y:
@@ -79,11 +74,6 @@ adxl345:
     address: 0x53
     update_interval: 100ms
     range: 4G  # Options: 2G, 4G, 8G, 16G
-
-# Define sensors with filtering
-sensor:
-  - platform: adxl345
-    id: my_adxl345
     accel_x:
       name: "Acceleration X"
       filters:
