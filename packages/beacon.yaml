@@ -1,8 +1,7 @@
 # This file is included as a package in all mmwave presence sensors
-# Requires area variable to be set to the name of the room the sensor is in.
-#
-# Parameters passed in:
-#   - ${area} - name of the area this file is included in
+# I use the Bermuda BLE Trilateration integration.  I set the area
+# on devices that include this beacon.yaml file using the ESPHome
+# integration.
 #
 esphome:
   comment: "Beacon"
