@@ -16,7 +16,7 @@ substitutions:
 esp32:
   board: esp32dev
   framework:
-    type: arduino
+    type: esp-idf
     
 
 # Enable logging
@@ -265,7 +265,6 @@ cover:
 #**********  LED Strip configuration **********
 light:
   - platform: esp32_rmt_led_strip
-    rmt_channel: 1
     id: led_strip
     chipset: WS2812
     pin: GPIO16

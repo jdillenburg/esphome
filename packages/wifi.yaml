@@ -1,6 +1,18 @@
 esphome:
 
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      id: ip_addr
+      name: "IP Address"
+
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
-
+  on_connect:
+    then:
+      - delay: 2s   # give the sensor a moment to update
+      - logger.log:
+          level: INFO
+          format: "Connected! IP Address: %s"
+          args: ["id(ip_addr).state.c_str()"]

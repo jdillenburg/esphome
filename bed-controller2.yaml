@@ -53,7 +53,8 @@ esp32:
   board: esp32-c3-devkitm-1
   framework:
     type: arduino
-
+    
+    
 # Enable logging
 logger:
   level: WARN
@@ -197,11 +198,11 @@ number:
         - script.execute: start_motor_if_needed
 
 light:
-  - platform: neopixelbus
-    variant: WS2812
+  - platform: esp32_rmt_led_strip
+    chipset: WS2811
     pin: GPIO8
     num_leds: 1
-    type: GRB
+    rgb_order: GRB
     restore_mode: RESTORE_DEFAULT_ON
     id: onboard_led
     name: "Status light"
