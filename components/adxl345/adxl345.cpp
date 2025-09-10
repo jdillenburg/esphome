@@ -1,4 +1,4 @@
-##include "adxl345.h"
+#include "adxl345.h"
 #include "esphome/core/log.h"
 #include <cmath>
 

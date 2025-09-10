@@ -1,3 +1,13 @@
+#
+# ld1115h as a ESPHome package
+#
+# Parameters:
+#   uart_rx_pin - pin the receive line is connected to, e.g., GPIO1
+#   uart_tx_pin - pin the transmit line is connected to, e.g., GPIO3
+#
+# packages:
+#  ld1115h: !include { file: packages/ld1115h.yaml, vars: { uart_rx_pin: GPIO16, uart_tx_pin: GPIO17 }}
+#
 esphome:
   on_boot:    #LD1115H Initial Setting
     priority: -200
@@ -18,10 +28,6 @@ external_components:
       type: git
       url: https://github.com/ssieb/custom_components #Thanks for @ssieb components.
     components: [ serial ]
-
-# Disable logging to UART
-logger:
-  baud_rate: 0
 
 uart:
   id: LD1115H_UART_BUS
