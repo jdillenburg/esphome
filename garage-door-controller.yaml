@@ -53,7 +53,7 @@ switch:
     restore_mode: ALWAYS_OFF
     on_turn_on:
       then:
-        - delay: 30000ms
+        - delay: 500ms
         - switch.turn_off: relay
 
 
